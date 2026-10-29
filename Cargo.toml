@@ -1,0 +1,24 @@
+[package]
+name = "unified-git"
+description = "Git checkouts for services that run code from a repository: clone, pull, commits and export, with credentials kept off the command line"
+version = "0.0.0"
+edition = "2024"
+# MSRV, the same as the services that depend on this crate: a language
+# feature newer than their pinned toolchain must fail here first.
+rust-version = "1.96"
+license = "Apache-2.0"
+repository = "https://github.com/OpusProjects/git"
+readme = "README.md"
+# Consumed by git tag from the services that use it — never published to
+# crates.io
+publish = false
+
+[dependencies]
+# The Basic auth header for a token or a username and password
+base64 = { version = "0.23", default-features = false, features = ["std"] }
+tokio = { version = "1", features = ["full"] }
+tracing = "0.1"
+
+# [dev-dependencies] = compiled only for tests
+[dev-dependencies]
+tempfile = "3"
