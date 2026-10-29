@@ -3,7 +3,7 @@
 use std::collections::HashMap;
 use std::path::Path;
 
-use unified_git::{CliGit, GitPort, Remote};
+use git_rs::{CliGit, GitPort, Remote};
 
 #[tokio::test]
 async fn every_operation_says_git_is_missing() {

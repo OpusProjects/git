@@ -10,7 +10,7 @@ Git keeps a local checkout of a repository up to date and reads from it: which c
 what a pull brought, and a folder as it was at an older commit. It drives the `git` binary, so what
 it does is what `git -C <dir> log` shows, and it keeps credentials off the command line.
 
-One crate, `unified-git`: the `GitPort` trait a service codes against, `CliGit` that implements it,
+One crate, `git-rs`: the `GitPort` trait a service codes against, `CliGit` that implements it,
 and the functions that remove credentials written into an address before it is shown or logged.
 
 ---

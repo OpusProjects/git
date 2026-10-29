@@ -12,7 +12,7 @@ local copy before anything is released.
 
 ## Layout
 
-One crate, `unified-git`, at the root of the repository.
+One crate, `git-rs`, at the root of the repository.
 
 ```
 Cargo.toml                    # the crate: version, MSRV, dependencies
@@ -78,7 +78,7 @@ With this repository checked out next to the service, add a `[patch]` section to
 
 ```toml
 [patch."https://github.com/OpusProjects/git"]
-unified-git = { path = "../git" }
+git-rs = { path = "../git" }
 ```
 
 Then run the service's own gates (`cargo clippy --all-targets -- -D warnings` and `cargo test`):
