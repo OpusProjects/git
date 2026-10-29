@@ -1,7 +1,7 @@
 [package]
 name = "unified-git"
 description = "Git checkouts for services that run code from a repository: clone, pull, commits and export, with credentials kept off the command line"
-version = "0.0.0"
+version = "0.1.0"
 edition = "2024"
 # MSRV, the same as the services that depend on this crate: a language
 # feature newer than their pinned toolchain must fail here first.
