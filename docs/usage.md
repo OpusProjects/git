@@ -1,6 +1,6 @@
 # Usage
 
-How a service uses the `unified-git` crate: the trait it codes against, the adapter that implements
+How a service uses the `git-rs` crate: the trait it codes against, the adapter that implements
 it, how credentials reach git, and what each operation does.
 
 - [Depending on the crate](#depending-on-the-crate)
@@ -20,7 +20,7 @@ it, how credentials reach git, and what each operation does.
 A service names a release tag of this repository in its `Cargo.toml`, never a branch.
 
 ```toml
-unified-git = { git = "https://github.com/OpusProjects/git", tag = "v0.1.0" }
+git-rs = { git = "https://github.com/OpusProjects/git", tag = "v0.1.0" }
 ```
 
 The machine that runs the service needs the `git` binary (2.31 or newer, for the credential
@@ -34,7 +34,7 @@ A service holds a `GitPort` and builds a `CliGit` once, where it wires its adapt
 
 ```rust
 use std::sync::Arc;
-use unified_git::{CliGit, GitPort, Remote};
+use git_rs::{CliGit, GitPort, Remote};
 
 let git: Arc<dyn GitPort> = Arc::new(CliGit::new());
 let remote = Remote { url: project.git_url.clone(), branch: project.branch.clone() };

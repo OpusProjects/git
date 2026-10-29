@@ -151,10 +151,10 @@ gh workflow run build.yaml --ref release-please--branches--main
 A release here changes nothing in a service until it names the new tag.
 
 In each service that uses the crate, open a `build:` pull request (`build: move to git v0.2.0`)
-that changes the `tag` of `unified-git` in `Cargo.toml` and refreshes the lockfile:
+that changes the `tag` of `git-rs` in `Cargo.toml` and refreshes the lockfile:
 
 ```bash
-cargo update -p unified-git
+cargo update -p git-rs
 ```
 
 The service's CI is the check that the release works there. A release that changes what a person

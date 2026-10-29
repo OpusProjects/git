@@ -1,4 +1,4 @@
-// unified-git — local checkouts of a git repository, kept up to date.
+// git-rs — local checkouts of a git repository, kept up to date.
 //
 // A service that runs scripts or reads files from a repository needs the same
 // few things: clone it, pull it, know which commit it is at, see what a pull

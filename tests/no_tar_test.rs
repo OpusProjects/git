@@ -3,7 +3,7 @@
 use std::collections::HashMap;
 use std::path::Path;
 
-use unified_git::{CliGit, GitPort, Remote};
+use git_rs::{CliGit, GitPort, Remote};
 
 async fn git(dir: &Path, args: &[&str]) {
     let status = tokio::process::Command::new("git")
