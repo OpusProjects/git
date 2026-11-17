@@ -475,8 +475,27 @@ fn auth_env(credentials: &HashMap<String, String>) -> Vec<(String, String)> {
     envs
 }
 
-async fn run_git(args: &[&str], envs: &[(String, String)]) -> Result<(), GitError> {
+// After a fetch, git starts its automatic maintenance (`gc --auto`, or
+// `maintenance run --auto` on git >= 2.47) and by default DETACHES it: the
+// child calls setsid and outlives the git we waited for, so it is reparented
+// to PID 1. In a container without an init that PID 1 is the service itself,
+// which never waits on children it did not spawn: every detached run stayed
+// behind as a `[git] <defunct>` zombie, one per pull, until the pid limit.
+// Keeping the maintenance in the foreground makes it part of the command we
+// wait on (and bounds it by the same timeout). Both keys, because git < 2.47
+// only reads gc.autoDetach; an older git ignores the key it does not know.
+// They go on the command line rather than in GIT_CONFIG_* because auth_env
+// already owns that numbered list.
+const FOREGROUND_MAINTENANCE: [&str; 4] = [
+    "-c",
+    "gc.autoDetach=false",
+    "-c",
+    "maintenance.autoDetach=false",
+];
+
+fn git_command(args: &[&str], envs: &[(String, String)]) -> Command {
     let mut cmd = Command::new("git");
+    cmd.args(FOREGROUND_MAINTENANCE);
     cmd.args(args);
     for (key, value) in envs {
         cmd.env(key, value);
@@ -488,10 +507,16 @@ async fn run_git(args: &[&str], envs: &[(String, String)]) -> Result<(), GitErro
     // this future must KILL the git child rather than abandon it, or a hung
     // remote would accumulate a live git process per attempt.
     cmd.kill_on_drop(true);
+    cmd
+}
 
-    let output = cmd.output().await.map_err(|e| GitError {
-        message: format!("failed to run git {:?}: {}", args.first().unwrap_or(&""), e),
-    })?;
+async fn run_git(args: &[&str], envs: &[(String, String)]) -> Result<(), GitError> {
+    let output = git_command(args, envs)
+        .output()
+        .await
+        .map_err(|e| GitError {
+            message: format!("failed to run git {:?}: {}", args.first().unwrap_or(&""), e),
+        })?;
 
     if !output.status.success() {
         // A git_url may carry a token (https://bot:<token>@host/...): it is on
@@ -522,6 +547,26 @@ mod tests {
         assert_eq!(commits[0].author, "ana");
         assert_eq!(commits[0].at, 17);
         assert_eq!(commits[0].message, "fix it");
+    }
+
+    #[test]
+    fn maintenance_stays_in_the_foreground() {
+        let cmd = git_command(&["-C", "/repo", "fetch"], &[]);
+        let args: Vec<_> = cmd.as_std().get_args().collect();
+        // The -c pairs must come before the subcommand: git only reads
+        // configuration overrides given ahead of it.
+        assert_eq!(
+            args,
+            [
+                "-c",
+                "gc.autoDetach=false",
+                "-c",
+                "maintenance.autoDetach=false",
+                "-C",
+                "/repo",
+                "fetch"
+            ]
+        );
     }
 
     #[test]
