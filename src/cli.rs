@@ -257,21 +257,7 @@ impl GitPort for CliGit {
             }
             let log = local(log_args).await?;
             if log.status.success() {
-                for line in String::from_utf8_lossy(&log.stdout).lines() {
-                    // The format above always gives four fields; a line that
-                    // does not is skipped rather than half-read.
-                    let mut fields = line.splitn(4, '\u{1f}');
-                    if let (Some(revision), Some(author), Some(at), Some(message)) =
-                        (fields.next(), fields.next(), fields.next(), fields.next())
-                    {
-                        range.commits.push(Commit {
-                            revision: revision.to_string(),
-                            author: author.to_string(),
-                            message: message.to_string(),
-                            at: at.parse().unwrap_or(0),
-                        });
-                    }
-                }
+                range.commits = parse_log(&String::from_utf8_lossy(&log.stdout));
             }
             if range.commits.len() > max {
                 range.commits.truncate(max);
@@ -402,6 +388,27 @@ impl GitPort for CliGit {
 // An I/O error running a program, as a GitError naming the program. One
 // function for every call site, rather than a closure at each: a program that
 // fails to start fails the same way wherever it is started.
+// One commit per line of `git log --format=%H%x1f%an%x1f%ct%x1f%s`. That
+// format always gives four fields; a line that does not is skipped rather than
+// half-read.
+fn parse_log(stdout: &str) -> Vec<Commit> {
+    let mut commits = Vec::new();
+    for line in stdout.lines() {
+        let mut fields = line.splitn(4, '\u{1f}');
+        if let (Some(revision), Some(author), Some(at), Some(message)) =
+            (fields.next(), fields.next(), fields.next(), fields.next())
+        {
+            commits.push(Commit {
+                revision: revision.to_string(),
+                author: author.to_string(),
+                message: message.to_string(),
+                at: at.parse().unwrap_or(0),
+            });
+        }
+    }
+    commits
+}
+
 fn io_fail(what: &'static str) -> impl FnOnce(std::io::Error) -> GitError {
     move |e| GitError {
         message: format!("{what}: {e}"),
@@ -506,6 +513,16 @@ async fn run_git(args: &[&str], envs: &[(String, String)]) -> Result<(), GitErro
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn a_log_line_without_four_fields_is_skipped() {
+        let commits = parse_log("abc\u{1f}ana\u{1f}17\u{1f}fix it\nnot a commit line\n");
+        assert_eq!(commits.len(), 1);
+        assert_eq!(commits[0].revision, "abc");
+        assert_eq!(commits[0].author, "ana");
+        assert_eq!(commits[0].at, 17);
+        assert_eq!(commits[0].message, "fix it");
+    }
 
     #[test]
     fn no_credentials_means_no_env() {
